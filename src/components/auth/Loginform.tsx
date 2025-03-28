@@ -41,8 +41,9 @@ export function LoginForm() {
       const response = await axios.post(url, { username, password });
   
       console.log("Login successful:", response.data);
-     // localStorage.setItem("token", response.data.access_token);
-     Cookies.set("token", response.data.access_token, { expires: 7 });
+      localStorage.setItem("username", username);
+     Cookies.set("Authorization", response.data.access_token, { expires: 7 });
+      router.push("/chat");
       
     } catch (error) {
       if (axios.isAxiosError(error)) {
