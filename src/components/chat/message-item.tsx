@@ -1,57 +1,63 @@
 import { formatDistanceToNow } from "date-fns"
-import Image from "next/image"
-import { Check, CheckCheck } from "lucide-react"
 
-type MessageProps = {
+type MessageStatus = "sent" | "delivered" | "read"
+
+type MessageItemProps = {
   message: {
     id: string
+    senderId: string
     text: string
     timestamp: Date
-    status: "sending" | "sent" | "delivered" | "read"
+    status: MessageStatus
   }
   isOwnMessage: boolean
   senderName: string
-  senderAvatar: string
+  senderGradient: string
+  highlight?: string // Added highlight prop for search functionality
 }
 
-export function MessageItem({ message, isOwnMessage, senderName, senderAvatar }: MessageProps) {
-  const statusIcon = () => {
-    switch (message.status) {
-      case "sending":
-        return null
-      case "sent":
-        return <Check className="h-4 w-4 text-slate-400" />
-      case "delivered":
-        return <CheckCheck className="h-4 w-4 text-slate-400" />
-      case "read":
-        return <CheckCheck className="h-4 w-4 text-[#4F46E5]" />
-      default:
-        return null
-    }
+export function MessageItem({ message, isOwnMessage, senderName, senderGradient, highlight }: MessageItemProps) {
+  // Function to highlight search terms in message text
+  const highlightText = (text: string, query: string) => {
+    if (!query) return text
+
+    const parts = text.split(new RegExp(`(${query})`, "gi"))
+    return parts.map((part, i) =>
+      part.toLowerCase() === query.toLowerCase() ? (
+        <span key={i} className="bg-yellow-300 text-black">
+          {part}
+        </span>
+      ) : (
+        part
+      ),
+    )
   }
 
   return (
-    <div className={`flex items-start gap-3 ${isOwnMessage ? "flex-row-reverse" : ""}`}>
+    <div className={`flex ${isOwnMessage ? "justify-end" : "justify-start"}`}>
       {!isOwnMessage && (
-        <Image
-          src={senderAvatar || "/placeholder.svg"}
-          alt={senderName}
-          width={40}
-          height={40}
-          className="rounded-full"
-        />
+        <div className="relative mr-2 flex h-8 w-8 items-center justify-center rounded-full">
+          <div className={`absolute inset-0 rounded-full ${senderGradient}`}></div>
+          <span className="z-10 text-white text-xs">{senderName[0]?.toUpperCase()}</span>
+        </div>
       )}
-      <div className="max-w-[70%]">
+      <div className={`max-w-[75%] ${isOwnMessage ? "order-1" : "order-2"}`}>
         <div
-          className={`rounded-2xl p-3 ${
-            isOwnMessage ? "rounded-tr-none bg-[#4F46E5] text-white" : "rounded-tl-none bg-[#1E293B] text-white"
+          className={`rounded-lg p-3 ${
+            isOwnMessage ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
           }`}
         >
-          <p className="whitespace-pre-wrap break-words">{message.text}</p>
+          {highlight ? highlightText(message.text, highlight) : message.text}
         </div>
-        <div className={`mt-1 flex items-center gap-1 text-xs text-slate-400 ${isOwnMessage ? "justify-end" : ""}`}>
+        <div
+          className={`mt-1 flex items-center text-xs text-muted-foreground ${isOwnMessage ? "justify-end" : "justify-start"}`}
+        >
           <span>{formatDistanceToNow(message.timestamp, { addSuffix: true })}</span>
-          {isOwnMessage && statusIcon()}
+          {isOwnMessage && (
+            <span className="ml-1">
+              {message.status === "read" ? "✓✓" : message.status === "delivered" ? "✓✓" : "✓"}
+            </span>
+          )}
         </div>
       </div>
     </div>

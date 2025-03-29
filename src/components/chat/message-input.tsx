@@ -2,80 +2,69 @@
 
 import type React from "react"
 
-import { useState, useRef } from "react"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Paperclip, Smile, Send, Mic } from "lucide-react"
+import { Send } from "lucide-react"
 
 type MessageInputProps = {
   onSendMessage: (text: string) => void
+  onTyping: () => void
+  onStopTyping: () => void
 }
 
-export function MessageInput({ onSendMessage }: MessageInputProps) {
-  const [message, setMessage] = useState("")
-  const inputRef = useRef<HTMLTextAreaElement>(null)
+export function MessageInput({ onSendMessage, onTyping, onStopTyping }: MessageInputProps) {
+  const [text, setText] = useState("")
+  const [isTyping, setIsTyping] = useState(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (message.trim()) {
-      onSendMessage(message)
-      setMessage("")
-      inputRef.current?.focus()
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value
+    setText(value)
+
+    if (value.trim() && !isTyping) {
+      onTyping()
+      setIsTyping(true)
+    } else if (!value.trim() && isTyping) {
+      onStopTyping()
+      setIsTyping(false)
     }
   }
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleSendMessage = () => {
+    if (text.trim()) {
+      onSendMessage(text)
+      setText("")
+      onStopTyping()
+      setIsTyping(false)
+    }
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault()
-      handleSubmit(e)
+      handleSendMessage()
     }
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex items-end gap-2">
+    <div className="relative">
+      <textarea
+        rows={1}
+        value={text}
+        onChange={handleInputChange}
+        onBlur={onStopTyping}
+        onFocus={onTyping}
+        onKeyDown={handleKeyDown}
+        placeholder="Type your message..."
+        className="w-full rounded-md bg-muted px-3 py-2 pr-12 resize-none focus:outline-none focus:ring-1 focus:ring-primary"
+      />
       <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        className="h-10 w-10 shrink-0 rounded-full text-slate-400 hover:text-white"
+        onClick={handleSendMessage}
+        className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground disabled:bg-muted-foreground disabled:cursor-not-allowed"
+        disabled={!text.trim()}
       >
-        <Paperclip className="h-5 w-5" />
+        <Send className="h-4 w-4" />
       </Button>
-
-      <div className="relative flex-1">
-        <textarea
-          ref={inputRef}
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Type a message..."
-          className="w-full resize-none rounded-2xl bg-[#1E293B] px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#4F46E5] min-h-[44px] max-h-[120px]"
-          rows={1}
-          style={{
-            height: "auto",
-            minHeight: "44px",
-            maxHeight: "120px",
-          }}
-        />
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="absolute bottom-1 right-1 h-8 w-8 rounded-full text-slate-400 hover:text-white"
-        >
-          <Smile className="h-5 w-5" />
-        </Button>
-      </div>
-
-      {message.trim() ? (
-        <Button type="submit" size="icon" className="h-10 w-10 shrink-0 rounded-full bg-[#4F46E5] hover:bg-[#4338CA]">
-          <Send className="h-5 w-5" />
-        </Button>
-      ) : (
-        <Button type="button" size="icon" className="h-10 w-10 shrink-0 rounded-full bg-[#4F46E5] hover:bg-[#4338CA]">
-          <Mic className="h-5 w-5" />
-        </Button>
-      )}
-    </form>
+    </div>
   )
 }
 

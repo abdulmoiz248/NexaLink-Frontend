@@ -40,14 +40,13 @@ export function LoginForm() {
       const url = `${process.env.NEXT_PUBLIC_URL}/auth/login`;
       const response = await axios.post(url, { username, password });
   
-      console.log("Login successful:", response.data);
       localStorage.setItem("username", username);
      Cookies.set("Authorization", response.data.access_token, { expires: 7 });
       router.push("/chat");
       
     } catch (error) {
       if (axios.isAxiosError(error)) {
-        console.error("Login failed:", error.response?.data);
+        console.log("Login failed:", error.response?.data);
         
         if (error.response?.status === 401) {
           setError("Invalid username or password. Please try again.");
